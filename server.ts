@@ -231,9 +231,9 @@ app.put("/api/meetings/:id/attendance", (req, res) => {
 //     console.log(`Server running on http://localhost:${PORT}`);
 //   });
 // }
-
 async function startServer() {
-  const PORT = 3000;
+  // On utilise le port fourni par Render ou 3000 par défaut
+  const PORT = process.env.PORT || 3000;
 
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -246,20 +246,18 @@ async function startServer() {
     app.get("*", async (req, res) => {
       try {
         const url = req.originalUrl;
-
         let template = fs.readFileSync(
           path.resolve(__dirname, "index.html"),
           "utf-8"
         );
-
         template = await vite.transformIndexHtml(url, template);
-
         res.status(200).set({ "Content-Type": "text/html" }).end(template);
-      } catch (e) {
-        res.status(500).end(e);
+      } catch (e: any) {
+        res.status(500).end(e.stack);
       }
     });
   } else {
+    // IMPORTANT : Pour Render, on pointe vers le dossier dist
     app.use(express.static(path.join(__dirname, "dist")));
 
     app.get("*", (req, res) => {
@@ -267,8 +265,10 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  // On écoute sur 0.0.0.0 pour être accessible depuis l'extérieur
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT}`);
   });
 }
+
 startServer();
